@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+ 	<meta charset="utf-8">
+ 	<title> Work Work Work</title>
+ 	<script type="text/javascript" src="js/d3/d3.js"></script>
+  <script src="js/d3-tip.js"></script>
+ 	<style type="text/css">
+      pieTip{
+        max-width: 100px;
+        min-width: 40px;
+        height: 50px;
+      }
+     rect{
+	 	  fill:salmon;
+ 	    }
+     text{
+ 	     	font-family: sans-serif;
+ 	     	font-size: 12px;
+ 	     	fill:white;
+        text-anchor: middle;
+ 	     }
+ 	  .button1{
+	 	background-color: #008CBA; /* Green */
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px
+		}
+     .button2{
+    background-color: gray; /* Green */
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px
+    }
+
+   .fDnodes {
+    fill: green;
+    stroke: #fff;
+    stroke-width: 2px;
+    }
+
+   .fDlinks {
+    stroke: #777;
+    stroke-width: 2px;
+    }
+
+ 	</style>
+ </head>
+ <body bgcolor="black">
+    <div align="center" margin="auto">
+     <button class = "button1" onclick="mainFun(0);"> Bar Chart</button>
+    <button class = "button1" onclick="mainFun(1);"> Pie Chart </button>
+    <button class =  "button1" onclick="mainFun(2);"> Force Directed Layout</button>
+    </div>
+    <br>
+    <div align="center">
+    <button  class = "button2"onclick="printNO();"> NO</button>
+    <button  class = "button2"onclick="printOz();"> Ozone</button>
+    <button  class = "button2"onclick="printNO2();"> NO2</button>
+    <button  class = "button2"onclick="printSO2();"> SO2</button>
+    <button class = "button2" onclick="printPM10();"> PM10</button>
+    </div>
+     <br>
+    <div id="AA" align="center"></div>
+    
+ 	<script type="text/javascript">
+     var margin = {top: 20, right: 20, bottom: 20, left: 20};
+ 	 var flag ; 
+	 var svgWidth = 700 - margin.left - margin.right;
+	 var svgHeight = 500 - margin.top - margin.bottom;
+	 var barPadding = 3;
+	 
+     //pie variables
+   outR = svgWidth/3;
+	 inR = 0;
+
+
+     //dummy dataset
+    var NO =[];
+    var NO2 = [];
+	  var SO2 = [];
+	  var PM10 = [];
+    var O3 = [];
+    var NOData, NO2Data, SO2Data, PM10Data, O3Data;
+
+
+
+    function doBin(fileData){
+      //console.log(fileData);
+          for(i=0;i<fileData.length;i++){
+            O3.push(fileData[i].O3);
+            NO.push(fileData[i].NO);
+            NO2.push(fileData[i].NO2);
+            SO2.push(fileData[i].SO2);
+            PM10.push(fileData[i].PM10);
+          }
+         O3Data = d3.histogram().domain([d3.min(O3),d3.max(O3)]).thresholds(10)(O3);
+         NO2Data = d3.histogram().domain([d3.min(NO2),d3.max(NO2)]).thresholds(10)(NO2);
+         NOData = d3.histogram().domain([d3.min(NO),d3.max(NO)]).thresholds(10)(NO);
+         SO2Data = d3.histogram().domain([d3.min(SO2),d3.max(SO2)]).thresholds(10)(SO2);
+         PM10Data = d3.histogram().domain([d3.min(PM10),d3.max(PM10)]).thresholds(10)(PM10);
+     }
+
+    d3.tsv("file.tsv")
+   .row(function(d) {
+    // for each row of the data, create an object with these properties...
+    return {
+      O3: +d.O3,
+      NO2: +d.NO2,
+      NO: +d.NO,
+      SO2: +d.SO2,
+      PM10: +d.PM10
+    };
+  })
+  .get(function(error, fileData) {
+    if (!error) {
+      doBin(fileData);
+    } else {
+      console.log("Err");
+    }
+  });
+  
+    
+
+  var tip = d3.tip()
+  .attr('class', 'd3-tip')
+  .offset([-10, 5])
+  .html(function(d) {
+    return "<span style='color:white'>" + d.length + "</span>";
+  })
+
+  var Ptip = d3.select("body")
+    .append("div")
+    .attr("class","pieTip")
+    .style("position", "absolute")
+    .style("z-index", "15")
+    .style("visibility", "hidden")
+    .style("background", "white");
+
+ 
+    var svg = d3.select("#AA")
+            .append("svg")
+            .attr("width",svgWidth + margin.left + margin.right)
+            .attr("height",svgHeight + margin.top + margin.bottom);
+
+     var g  = svg.append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+            .attr("text-align","center");
+
+     svg.append("text")
+        .attr("x", (svgWidth / 2))             
+        .attr("y",  100)
+        .attr("text-anchor", "middle")  
+        .style("font-size", "18px") 
+        .style("display","inline-block")
+        .text("Air pollution data from Leeds (U.K.) city centre, collected from 1994 to 1998.");
+    
+        
+    svg.append("text")
+        .attr("x", (svgWidth / 2)-10)             
+        .attr("y", (svgHeight/2)-80)
+        .attr("text-anchor", "middle")  
+        .style("font-size", "12px") 
+        .style("display","inline-block")
+        .text("please click on any Button to Start");
+        
+   /*svg.append("text")
+        .attr("x", (svgWidth / 2)-10)             
+        .attr("y", (svgHeight-80))
+        .attr("text-anchor", "middle")  
+        .style("font-size", "16px") 
+        .style("display","inline-block")
+        .text("Arun Rajan, 110921170");
+
+    */
+
+
+   svg.call(tip);
+
+
+ 	 function mainFun(i){
+ 	 	if(i==1){
+ 	 		flag=1;
+ 	 		printPie(NOData);
+ 	 	}
+ 	 	else if(i==0){
+ 	 		flag =0;
+ 	 		printBar(NOData);
+    }
+     else{
+      flag = 2;
+      forceFun(NOData);
+     }   
+  
+    svg.append("text")
+        .attr("x", (svgWidth / 2)-10)             
+        .attr("y", (svgHeight)+margin.bottom+15)
+        .attr("text-anchor", "middle")  
+        .style("font-size", "17px") 
+        .style("text-decoration", "underline")  
+        .text("Daily maximum NO in parts per billion.");
+
+ 	 }
+
+ 	 function printNO(){
+ 	 	if(flag ==1){
+ 	 			printPie(NOData);
+ 	 	}
+ 	  else if(flag==0){
+ 	 			printBar(NOData);
+ 	 	}
+    else{
+      forceFun(NOData);
+    }
+    svg.append("text")
+        .attr("x", (svgWidth / 2)-10)             
+        .attr("y", (svgHeight)+margin.bottom+15)
+        .attr("text-anchor", "middle")  
+        .style("font-size", "17px") 
+        .style("text-decoration", "underline")  
+        .text("Daily maximum NO in parts per billion.");
+ 	  }
+
+ 	  function printOz(){
+ 	  	if(flag==1){
+ 	  		printPie(O3Data);
+ 	  	}
+      else if(flag==0){
+        printBar(O3Data);
+      }
+      else{
+        forceFun(O3Data);
+      }
+      svg.append("text")
+        .attr("x", (svgWidth / 2)-10)             
+        .attr("y", (svgHeight)+margin.bottom+15)
+        .attr("text-anchor", "middle")  
+        .style("font-size", "17px") 
+        .style("text-decoration", "underline")  
+        .text("Daily maximum Ozone in parts per billion.");
+
+ 	  }
+       
+      function printNO2(){
+ 	 	if(flag ==1){
+ 	 			printPie(NO2Data);
+ 	 	}
+ 	 	else if(flag==0){
+        printBar(NO2Data);
+      }
+      else{
+        forceFun(NO2Data);
+      }
+    svg.append("text")
+        .attr("x", (svgWidth / 2)-10)             
+        .attr("y", (svgHeight)+margin.bottom+15)
+        .attr("text-anchor", "middle")  
+        .style("font-size", "17px") 
+        .style("text-decoration", "underline")  
+        .text("Daily maximum NO2 in parts per billion.");
+
+ 	  }
+
+ 	  function printSO2(){
+ 	  	if(flag==1){
+ 	  		printPie(SO2Data);
+ 	  	}
+ 	  	else if(flag==0){
+        printBar(SO2Data);
+      }
+      else{
+        forceFun(SO2Data);
+      }
+      svg.append("text")
+        .attr("x", (svgWidth / 2)-10)             
+        .attr("y", (svgHeight)+margin.bottom+15)
+        .attr("text-anchor", "middle")  
+        .style("font-size", "17px") 
+        .style("text-decoration", "underline")  
+        .text("Daily maximum SO2 in parts per billion.");
+
+ 	  }
+
+ 	  function printPM10(){
+ 	  	if(flag==1){
+ 	  		printPie(PM10Data);
+ 	  	}
+ 	  	else if(flag==0){
+        printBar(PM10Data);
+      }
+      else{
+        forceFun(PM10Data);
+      }
+       svg.append("text")
+        .attr("x", (svgWidth / 2)-10)             
+        .attr("y", (svgHeight)+margin.bottom+15)
+        .attr("text-anchor", "middle")  
+        .style("font-size", "17px") 
+        .style("text-decoration", "underline")  
+        .text("Daily maximum PM10 in micrograms/metre^3");
+ 	  }
+	 
+   //************************************* Pie Chart Code **************////
+   function printPie(dataset1){
+   	svg.selectAll("*").remove();
+     var dataset =[];
+     for(i=0;i<dataset1.length;i++){
+        if(dataset1[i].length!=0)
+            dataset.push(dataset1[i].length);
+     }
+
+	 var arc = d3.arc()
+	 				.innerRadius(inR)
+	 				 .outerRadius(outR);
+     
+     var pie1 = d3.pie();
+     var color = d3.scaleOrdinal(d3.schemeCategory10);
+
+     var pie1 = d3.pie()
+              .value(function(d) { return d.length; })
+               (dataset1);
+
+    var arcs = svg.selectAll("g.arc")
+    		.data(pie1)
+    		.enter()
+    		.append("g")
+    		.attr("class","arc")
+    		.attr("transform","translate("+outR+","+outR+")")
+        .on("mouseover", function(d){Ptip.text("["+d.data.x0+"-"+d.data.x1+"] = "+d.data.length); 
+          Ptip.style("width","100px");
+          Ptip.style("height","30px");
+          return Ptip.style("visibility", "visible");})
+        .on("mousemove", function(){return Ptip.style("top", (d3.event.pageY-10)+"px").style("left",(d3.event.pageX+10)+"px");})
+       .on("mouseout", function(){return Ptip.style("visibility", "hidden");});
+      
+
+ 
+    arcs.append("path")
+    	.attr("fill",function(d,i){
+    		return color(i);
+    	})
+    	.attr("d", arc);
+
+
+   }  
+   //***************************Pie  Chart ends **********************************//
+   
+
+   //***************************Bar Chart code ****************************//
+     function printBar(dataset){
+     svg.selectAll("*").remove();
+     
+
+      
+     var b_y = d3.scaleLinear()
+     				.domain([0,d3.max(dataset, function(d){ return d.length;})])
+     				.range([svgHeight,10]);
+
+     var b_x = d3.scaleLinear()
+               .domain([0, d3.max(dataset,function(d){return d.x1;})])
+               .range([0,svgWidth]);
+    
+     var bar = svg.selectAll(".bar")
+               .data(dataset)
+               .enter()
+               .append("rect").attr("class","bar")
+               .attr("x",function(d){ return b_x(d.x0);})
+               .attr("width",function(d){return b_x(d.x1) - b_x(d.x0) - 5 ;})
+               .attr("y",function(d){return b_y(d.length);})
+               .attr("height", function(d){return svgHeight- b_y(d.length) - 10;})
+               .on("mouseover", function(d,i){
+                 tip.show(d,i);
+                 d3.select(this).style("fill","#4CAF50")
+                 .attr("width",function(d){return b_x(d.x1) - b_x(d.x0)  ;})
+                 .attr("y",function(d){return b_y(d.length) - 10;})
+                 .attr("height",function(d){return svgHeight-b_y(d.length);})
+  
+               })
+               .on("mouseout", function(d,i){
+                 tip.hide(d,i); 
+                 d3.select(this).style("fill","salmon")
+                .attr("width", function(d){return b_x(d.x1) - b_x(d.x0) -5 ;})
+                .attr("y",function(d){return b_y(d.length) ;})
+                .attr("height",function(d){return svgHeight- b_y(d.length) - 10;})
+              });
+            
+   
+    
+     svg.append("g")
+      .attr("class", "axis")
+      .attr("transform", "translate(5," + svgHeight + ")")
+      .call(d3.axisBottom(b_x));
+
+	 }
+   //****************************** Bar Chart ends here *********************// 
+  
+   // *******************************Force Directed Graph code starts here *************//
+   
+   function forceFun(dataset){
+    svg.selectAll("*").remove();
+
+    var f_r = d3.scaleLinear()
+            .domain([0, svgWidth])
+            .range([ 10,  svgWidth/5]);
+
+
+     
+    var nodesData = [
+    ];
+
+     var linksData = [          
+      ];
+    console.log(dataset.length);
+   
+    var max  = new Object(); 
+    max.id = "";
+    max.value = 0;
+    for(var i=0;i<dataset.length;i++){
+      var nodeObject = new Object();
+      nodeObject.id =  ""+dataset[i].x0+"-"+dataset[i].x1;
+      nodeObject.value = dataset[i].length;
+      nodesData.push(nodeObject);
+
+      if(dataset[i].length > max.value){
+          max.id = nodeObject.id;
+          max.value = dataset[i].length;
+        }
+    }
+
+    //console.log(nodesData);
+    
+    for(var j = 0; j<nodesData.length;j++){
+        console.log(nodesData[j]);
+         var linkObject = new Object();
+         if(nodesData[j].id != max.id){
+            linkObject.source = max.id;
+            linkObject.target = nodesData[j].id;
+            linkObject.value = max.value - nodesData[j].value;
+            linksData.push(linkObject);
+        }
+    }
+   
+    console.log(linksData);
+   
+
+    var fDgraph = d3.forceSimulation()
+      .force("link", d3.forceLink().id(function(d) { return d.id; }).distance(svgWidth/5))
+      .force("charge", d3.forceManyBody())
+      .force("center", d3.forceCenter(svgWidth / 2, svgHeight / 2));
+
+
+    // remember the order to put nodes and links. Links come first, sort of Z index
+
+    var link = svg.append("g")
+               .attr("class","fDlinks")
+               .selectAll("line")
+               .data(linksData)
+               .enter().append('line');
+    //             
+    var node = svg.append("g")
+              .attr("class","fDnodes")
+              .selectAll("circle")
+              .data(nodesData)
+              .enter().append('circle')
+              .attr("r",function(d){ return f_r(d.value);})
+              .call(d3.drag()
+                    .on("start",dragstarted)
+                    .on("drag",dragged)
+                    .on("end",dragended)
+                );
+    node.append("title")
+        .text(function(d){return d.id;})
+        .style("fill","salmon");
+
+    fDgraph.nodes(nodesData)
+            .on("tick",ticked);
+            //.on(mouseover, function(){ d3.select(this).style("fill","green")})
+    fDgraph.force("link")
+            .links(linksData);
+    
+  function ticked() {
+    link
+        .attr("x1", function(d) { return d.source.x; })
+        .attr("y1", function(d) { return d.source.y; })
+        .attr("x2", function(d) { return d.target.x; })
+        .attr("y2", function(d) { return d.target.y; });
+
+
+    node
+        .attr("cx", function(d) { return d.x; })
+        .attr("cy", function(d) { return d.y; })
+        .style("fill","salmon");
+    }
+
+    function dragstarted(d) {
+      if (!d3.event.active) fDgraph.alphaTarget(0.3).restart();
+      d.fx = d.x;
+      d.fy = d.y;
+    }
+
+    function dragged(d) {
+      d.fx = d3.event.x;
+      d.fy = d3.event.y;
+    }
+
+    function dragended(d) {
+      if (!d3.event.active) fDgraph.alphaTarget(0);
+      d.fx = null;
+      d.fy = null;
+    }
+
+              
+
+   }
+
+
+   //*************************************Force Directed Graph ends here ********************//
+
+
+
+console.log("Working");
+  </script>
+ </body>
+</html>
